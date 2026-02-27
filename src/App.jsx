@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const LAYERS = [
   {
@@ -146,74 +146,400 @@ const STAGE2_LAYERS = [
   }
 ];
 
-const STAGE4_BLOCKS = [
-  { id: 'base', label: 'Base System' },
-  { id: 'tools', label: 'Tool Definitions' },
-  { id: 'workspace', label: 'Workspace Files' },
-  { id: 'context', label: 'Dynamic Context' },
-  { id: 'final', label: 'Final Prompt' }
+const STAGE4_SECTIONS = [
+  {
+    id: 'base',
+    title: 'Base System',
+    hint: 'Drop components that define foundational behavior.',
+    business: 'Corporate governance and non-negotiable policy.'
+  },
+  {
+    id: 'tools',
+    title: 'Tool Definitions',
+    hint: 'Drop capability-related components here.',
+    business: 'Operations team and specialist vendors.'
+  },
+  {
+    id: 'workspace',
+    title: 'Workspace Files',
+    hint: 'Drop reference material used across sessions.',
+    business: 'Company handbook and playbooks.'
+  },
+  {
+    id: 'context',
+    title: 'Dynamic Context',
+    hint: 'Drop components describing what is happening right now.',
+    business: 'Live meeting brief and current operating conditions.'
+  },
+  {
+    id: 'final',
+    title: 'Final Prompt',
+    hint: 'Drop components that define this turn’s task packet.',
+    business: 'Final board memo sent for execution.'
+  }
 ];
 
-const LAYER_LABELS = Object.fromEntries(STAGE4_BLOCKS.map((block) => [block.id, block.label]));
+const STAGE4_COMPONENTS = [
+  { id: 'pi-core', label: 'Pi Agent Core', section: 'base', color: 'base', tip: 'Core runtime instructions, like company charter rules.', example: 'Example: Always follow safety boundaries and escalation rules.' },
+  { id: 'built-in-tools', label: 'Built-in Tools', section: 'tools', color: 'tools', tip: 'Default operational capabilities the AI can use.', example: 'Example: Run calculations, browse docs, and read files.' },
+  { id: 'plugin-tools', label: 'Plugin Tools', section: 'tools', color: 'tools', tip: 'Custom capabilities, like hiring specialist contractors.', example: 'Example: Pull CRM records or query finance systems.' },
+  { id: 'agents-md', label: 'AGENTS.md', section: 'workspace', color: 'workspace', tip: 'Core behavior guidance, similar to operating policy.', example: 'Example: Prioritize risk checks before recommendations.' },
+  { id: 'soul-md', label: 'SOUL.md', section: 'workspace', color: 'workspace', tip: 'Voice and tone guidance, like brand communication style.', example: 'Example: Use concise executive tone with clear actions.' },
+  { id: 'tools-md', label: 'TOOLS.md', section: 'workspace', color: 'workspace', tip: 'Tool usage conventions for your local environment.', example: 'Example: Use finance plugin for P&L, not browser scraping.' },
+  { id: 'session-history', label: 'Session History', section: 'context', color: 'context', tip: 'Recent chat context, like latest meeting notes.', example: 'Example: User already asked for Q4 margin breakdown.' },
+  { id: 'memory-search', label: 'Memory Search', section: 'context', color: 'context', tip: 'Relevant past context, like pulling prior case files.', example: 'Example: Last quarter plan used to compare performance.' },
+  { id: 'conversation-history', label: 'Conversation History', section: 'final', color: 'final', tip: 'Conversation packet included in the final request.', example: 'Example: Prior prompts, constraints, and clarifications.' },
+  { id: 'user-message', label: 'User Message', section: 'final', color: 'final', tip: 'The immediate task request for this turn.', example: 'Example: “Draft a board-ready growth strategy memo.”' }
+];
 
-function evaluateAssembly(slots) {
-  const required = STAGE4_BLOCKS.map((block) => block.id);
-  const missing = required.filter((id) => !slots.includes(id));
+const COMPONENT_MAP = Object.fromEntries(STAGE4_COMPONENTS.map((item) => [item.id, item]));
+
+const SCENARIOS = {
+  finance: {
+    label: 'Finance',
+    stage0Line: 'You will learn how architecture improves financial decision quality and risk control.',
+    stage1Line: 'In finance, architecture ensures policy and controls are applied before analysis.',
+    stage2Line: 'The CFO asks for a board-ready margin and cash-flow briefing.',
+    stage3Line: 'Finance flow: governance and tools should shape analysis before final recommendations.',
+    stage4Line: 'Assemble the stack to generate a coherent board-style finance response.',
+    itemExamples: {
+      'pi-core': 'Example: Never disclose sensitive financial data.',
+      'built-in-tools': 'Example: Read reports and run calculations.',
+      'plugin-tools': 'Example: Query ERP and planning systems.',
+      'agents-md': 'Example: Check risk policy before recommendations.',
+      'soul-md': 'Example: Use concise boardroom financial language.',
+      'tools-md': 'Example: Use approved finance tools first.',
+      'session-history': 'Example: User asked for Q4 margin variance.',
+      'memory-search': 'Example: Prior quarter assumptions for comparison.',
+      'conversation-history': 'Example: Prior constraints and board context.',
+      'user-message': 'Example: "Draft a board-ready margin action memo."'
+    }
+  },
+  sales: {
+    label: 'Sales',
+    stage0Line: 'You will learn how architecture improves pipeline decisions and execution consistency.',
+    stage1Line: 'In sales, architecture ensures customer context and policy are applied before outreach guidance.',
+    stage2Line: 'The CRO asks for a regional pipeline health and recovery plan.',
+    stage3Line: 'Sales flow: rules and capabilities should shape customer strategy before final messaging.',
+    stage4Line: 'Assemble the stack to generate a reliable sales action plan.',
+    itemExamples: {
+      'pi-core': 'Example: Protect customer data and compliance boundaries.',
+      'built-in-tools': 'Example: Parse pipeline sheets and summarize deals.',
+      'plugin-tools': 'Example: Pull CRM opportunities and account notes.',
+      'agents-md': 'Example: Follow pricing and discount guardrails.',
+      'soul-md': 'Example: Use confident customer-facing language.',
+      'tools-md': 'Example: Use CRM plugin before manual lookup.',
+      'session-history': 'Example: User asked about stalled enterprise deals.',
+      'memory-search': 'Example: Last quarter win-loss themes.',
+      'conversation-history': 'Example: Prior account constraints and targets.',
+      'user-message': 'Example: "Draft a regional pipeline recovery plan."'
+    }
+  },
+  ops: {
+    label: 'Operations',
+    stage0Line: 'You will learn how architecture improves execution reliability and process decisions.',
+    stage1Line: 'In operations, architecture ensures standards and current conditions are applied before action planning.',
+    stage2Line: 'The COO asks for a weekly execution risk and mitigation brief.',
+    stage3Line: 'Operations flow: policy and live context should shape execution priorities before final output.',
+    stage4Line: 'Assemble the stack to generate a practical operations briefing.',
+    itemExamples: {
+      'pi-core': 'Example: Enforce safety and escalation policies.',
+      'built-in-tools': 'Example: Read SOPs and summarize incidents.',
+      'plugin-tools': 'Example: Pull ticketing and fulfillment data.',
+      'agents-md': 'Example: Follow operational reliability standards.',
+      'soul-md': 'Example: Use direct execution-first language.',
+      'tools-md': 'Example: Use monitoring tools before manual checks.',
+      'session-history': 'Example: User asked about delivery delays.',
+      'memory-search': 'Example: Past incident retrospectives.',
+      'conversation-history': 'Example: Prior workflow constraints and blockers.',
+      'user-message': 'Example: "Draft a weekly execution risk update."'
+    }
+  }
+};
+
+function stage2Examples(scenarioKey, layerId) {
+  const matrix = {
+    finance: {
+      tools: {
+        component: 'Finance component example: approved capabilities to pull P&L and variance data.',
+        subs: {
+          'Built-in Tools': 'Built-in Tools: calculate margin deltas from uploaded sheets.',
+          'Plugin Tools': 'Plugin Tools: query ERP for latest actuals.'
+        }
+      },
+      context: {
+        component: 'Finance component example: current quarter briefing context.',
+        subs: {
+          'Session History': 'Session History: CFO asked for Q4 margin shortfall diagnosis.',
+          Skills: 'Skills: apply the finance-analysis playbook.',
+          'Memory Search': 'Memory Search: retrieve last quarter assumptions and outcomes.'
+        }
+      },
+      workspace: {
+        component: 'Finance component example: reference files for policy and communication.',
+        subs: {
+          'AGENTS.md': 'AGENTS.md: enforce risk checks before advice.',
+          'SOUL.md': 'SOUL.md: keep response boardroom concise.',
+          'TOOLS.md': 'TOOLS.md: use ERP plugin before manual browsing.'
+        }
+      },
+      base: {
+        component: 'Finance component example: immutable governance baseline.',
+        subs: {
+          'Pi Agent Core': 'Pi Agent Core: never expose confidential financial data.'
+        }
+      },
+      final: {
+        component: 'Finance component example: final board request packet.',
+        subs: {
+          Conversation: 'Conversation History: prior constraints and scope.',
+          'User Message': 'User Message: "Draft a board-ready margin recovery memo."',
+          'System Prompt': 'System Prompt: enforce structure, risk framing, and actions.'
+        }
+      }
+    },
+    sales: {
+      tools: {
+        component: 'Sales component example: capabilities to inspect pipeline and accounts.',
+        subs: {
+          'Built-in Tools': 'Built-in Tools: summarize stage conversion rates.',
+          'Plugin Tools': 'Plugin Tools: pull CRM opportunity details.'
+        }
+      },
+      context: {
+        component: 'Sales component example: live regional pipeline status.',
+        subs: {
+          'Session History': 'Session History: CRO asked about stalled enterprise deals.',
+          Skills: 'Skills: apply pipeline-recovery playbook.',
+          'Memory Search': 'Memory Search: retrieve last quarter win-loss patterns.'
+        }
+      },
+      workspace: {
+        component: 'Sales component example: reference files for policy and voice.',
+        subs: {
+          'AGENTS.md': 'AGENTS.md: enforce discount and compliance guardrails.',
+          'SOUL.md': 'SOUL.md: keep tone decisive and customer-focused.',
+          'TOOLS.md': 'TOOLS.md: prioritize CRM plugin workflows.'
+        }
+      },
+      base: {
+        component: 'Sales component example: baseline data and conduct rules.',
+        subs: {
+          'Pi Agent Core': 'Pi Agent Core: protect customer data by default.'
+        }
+      },
+      final: {
+        component: 'Sales component example: final action-plan request packet.',
+        subs: {
+          Conversation: 'Conversation History: prior account constraints and goals.',
+          'User Message': 'User Message: "Draft a regional pipeline recovery plan."',
+          'System Prompt': 'System Prompt: require clear actions and ownership.'
+        }
+      }
+    },
+    ops: {
+      tools: {
+        component: 'Capabilities to monitor execution reliability.',
+        subs: {
+          'Built-in Tools': 'Built-in Tools: summarize delays and bottlenecks.',
+          'Plugin Tools': 'Plugin Tools: pull ticketing and fulfillment metrics.'
+        }
+      },
+      context: {
+        component: 'Current execution status briefing.',
+        subs: {
+          'Session History': 'Session History: COO asked about delivery delays.',
+          Skills: 'Skills: apply incident-triage playbook.',
+          'Memory Search': 'Memory Search: retrieve similar incident retrospectives.'
+        }
+      },
+      workspace: {
+        component: 'Process and policy reference set.',
+        subs: {
+          'AGENTS.md': 'AGENTS.md: enforce reliability standards.',
+          'SOUL.md': 'SOUL.md: keep language direct and execution-first.',
+          'TOOLS.md': 'TOOLS.md: use monitoring tools before manual checks.'
+        }
+      },
+      base: {
+        component: 'Non-negotiable safety baseline.',
+        subs: {
+          'Pi Agent Core': 'Pi Agent Core: enforce escalation and safety constraints.'
+        }
+      },
+      final: {
+        component: 'Final risk-brief request packet.',
+        subs: {
+          Conversation: 'Conversation History: prior blockers and constraints.',
+          'User Message': 'User Message: "Draft a weekly execution risk update."',
+          'System Prompt': 'System Prompt: require risk table and mitigation steps.'
+        }
+      }
+    }
+  };
+
+  return matrix[scenarioKey]?.[layerId] ?? { component: '', subs: {} };
+}
+
+const GLOSSARY = [
+  { term: 'Context', def: 'What is happening right now in the conversation.' },
+  { term: 'Constraints', def: 'Rules that limit what the AI should or should not do.' },
+  { term: 'Execution', def: 'How the system turns instructions into a response.' },
+  { term: 'Capabilities', def: 'Tools and actions the AI is allowed to use.' },
+  { term: 'Governance', def: 'Policy and control rules for consistent behavior.' },
+  { term: 'Prompt Packet', def: 'The full instruction bundle sent for this turn.' },
+  { term: 'Static Inputs', def: 'Stable references like policies and playbooks.' },
+  { term: 'Dynamic Inputs', def: 'Live signals like recent messages and retrieved memory.' }
+];
+
+const CONFIDENCE_OPTIONS = [1, 2, 3, 4, 5];
+
+function flattenPlacement(placement) {
+  return STAGE4_SECTIONS.flatMap((section) => placement[section.id]);
+}
+
+function evaluateAssembly(placement) {
+  const allPlaced = flattenPlacement(placement);
+  const requiredIds = STAGE4_COMPONENTS.map((item) => item.id);
+  const missing = requiredIds.filter((id) => !allPlaced.includes(id));
 
   if (missing.length > 0) {
-    const missingLayer = LAYER_LABELS[missing[0]];
+    const missingItem = COMPONENT_MAP[missing[0]].label;
     return {
       state: 'missing',
       output:
-        'I can provide a general summary, but I cannot deliver a structured business analysis with this setup.',
-      explanation: `Missing layer: ${missingLayer}. Structural consequence: the system loses a required decision input. Reasoning impact: output becomes generic and shallow.`
+        'The answer is generic and thin. It does not use strong capabilities, context, or policy grounding.',
+      explanation: `Missing component: ${missingItem}. Structural consequence: a required input never reaches execution. Reasoning impact: decisions become shallow and under-informed.`
     };
   }
 
-  const index = Object.fromEntries(required.map((id) => [id, slots.indexOf(id)]));
-  const violations = [];
-
-  if (index.base > index.final) {
-    violations.push('Base System was placed after Final Prompt.');
-  }
-  if (index.tools > index.final) {
-    violations.push('Tool Definitions was placed after Final Prompt.');
-  }
-  if (index.context > index.final) {
-    violations.push('Dynamic Context was placed after Final Prompt.');
-  }
-  if (index.final < 3) {
-    violations.push('Final Prompt was not near the bottom of the stack.');
-  }
-  if (!(index.base < index.tools && index.tools < index.workspace && index.workspace < index.context && index.context < index.final)) {
-    violations.push('Layer sequencing does not follow foundational-to-task order.');
+  for (const section of STAGE4_SECTIONS) {
+    for (const itemId of placement[section.id]) {
+      const item = COMPONENT_MAP[itemId];
+      if (item.section !== section.id) {
+        return {
+          state: 'misordered',
+          output:
+            'The response is partly coherent, but tone and execution conflict. Some parts ignore tools or context.',
+          explanation: `You placed ${item.label} inside ${section.title}. ${item.label} belongs in ${STAGE4_SECTIONS.find((s) => s.id === item.section).title}. Structural consequence: the wrong layer is consulted at the wrong time. Reasoning impact: interpretation quality drops.`
+        };
+      }
+    }
   }
 
-  if (violations.length > 0) {
+  const baseHasCore = placement.base.includes('pi-core');
+  const toolsHaveCapabilities = placement.tools.includes('built-in-tools') || placement.tools.includes('plugin-tools');
+  const dynamicAfterStatic = placement.context.length > 0 && placement.workspace.length > 0;
+  const finalNearBottom = placement.final.length >= 2;
+
+  if (!baseHasCore) {
+    return {
+      state: 'missing',
+      output: 'The response sounds unconstrained and inconsistent.',
+      explanation:
+        'Missing component: Pi Agent Core in Base System. Structural consequence: foundational behavior is undefined. Reasoning impact: responses drift and violate policy expectations.'
+    };
+  }
+
+  if (!toolsHaveCapabilities) {
+    return {
+      state: 'missing',
+      output: 'The response is generic and cannot execute practical business actions.',
+      explanation:
+        'Missing capability layer: Tool Definitions has no usable tools. Structural consequence: the system cannot perform structured operations. Reasoning impact: advice stays high-level and non-executable.'
+    };
+  }
+
+  if (!dynamicAfterStatic || !finalNearBottom) {
     return {
       state: 'misordered',
       output:
-        'The response is partly coherent, but tone and execution are inconsistent. Some instructions conflict, and tool use is unreliable.',
-      explanation: `Misordered layer: ${violations[0]} Structural consequence: interpretation happens with the wrong priority stack. Reasoning impact: the answer may contradict itself or ignore capabilities.`
+        'The response has partial logic but misses situational precision. It reads like a template, not a grounded decision.',
+      explanation:
+        'Ordering issue detected between static references, dynamic context, and final task packet. Structural consequence: context arrives with weak priority. Reasoning impact: task interpretation loses precision.'
     };
   }
 
   return {
     state: 'correct',
     output:
-      'Based on the provided tools and context, here is the structured business analysis with clear assumptions, constraints, and execution steps.',
+      'Based on available tools, live context, and policy references, here is a structured business analysis with aligned tone and actionable next steps.',
     explanation:
-      'You placed foundational rules before context and task. Structural consequence: constraints were applied before interpretation. Reasoning impact: output stayed coherent, aligned, and actionable.'
+      'All components were placed in the correct layer order. Structural consequence: capabilities, policy, and context were integrated before execution. Reasoning impact: output remained coherent, reliable, and operationally useful.'
   };
 }
 
-function StageTwoStory() {
+function ConfidenceCheck({ title, answers, onAnswer, gain = null }) {
+  const questions = [
+    {
+      id: 'order',
+      label: 'How confident are you in explaining why architecture order changes AI behavior?'
+    },
+    {
+      id: 'roles',
+      label: 'How confident are you in explaining each layer’s role in business terms?'
+    }
+  ];
+
+  return (
+    <section className="confidence-card" aria-label={title}>
+      <h3>{title}</h3>
+      {questions.map((question) => (
+        <div key={question.id} className="confidence-row">
+          <p>{question.label}</p>
+          <div className="confidence-options">
+            {CONFIDENCE_OPTIONS.map((value) => (
+              <button
+                key={`${question.id}-${value}`}
+                type="button"
+                className={answers[question.id] === value ? 'confidence-btn active' : 'confidence-btn'}
+                onClick={() => onAnswer(question.id, value)}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      {gain ? (
+        <p className="confidence-gain">
+          Learning gain: +{gain.order} on order understanding, +{gain.roles} on layer-role clarity.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function GlossaryDrawer({ open, onToggle }) {
+  return (
+    <div className={open ? 'glossary open' : 'glossary'}>
+      <button type="button" className="glossary-toggle" onClick={onToggle}>
+        {open ? 'Close Glossary' : 'Glossary'}
+      </button>
+      {open ? (
+        <div className="glossary-panel">
+          <h4>Quick Glossary</h4>
+          <ul>
+            {GLOSSARY.map((item) => (
+              <li key={item.term}>
+                <strong>{item.term}:</strong> {item.def}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function StageTwoStory({ scenarioKey, onContinue }) {
   const [activeLayerId, setActiveLayerId] = useState('tools');
   const [visited, setVisited] = useState(new Set(['tools']));
   const activeLayer = useMemo(
     () => STAGE2_LAYERS.find((layer) => layer.id === activeLayerId) ?? STAGE2_LAYERS[0],
     [activeLayerId]
   );
+  const activeExamples = useMemo(() => stage2Examples(scenarioKey, activeLayerId), [scenarioKey, activeLayerId]);
 
   function activateLayer(layerId) {
     setActiveLayerId(layerId);
@@ -233,6 +559,10 @@ function StageTwoStory() {
       <p className="stage-subtitle">
         Click any layer in the diagram. You will see its role, business analogy, and why placement
         matters.
+      </p>
+      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage2Line}</p>
+      <p className="stage-subtitle">
+        Reference: OpenClaw System Prompt Architecture overview by Paolo Perazzo.
       </p>
 
       <div className="story-layout">
@@ -308,28 +638,52 @@ function StageTwoStory() {
             Stage 2 Progress: {visited.size}/{STAGE2_LAYERS.length} layers explored
           </p>
           <h3>{activeLayer.title}</h3>
-          <p>{activeLayer.description}</p>
-          <p className="panel-line">
-            <strong>Business analogy:</strong> {activeLayer.businessAnalogy}
-          </p>
-          <p className="panel-line">
-            <strong>Why this layer matters:</strong> {activeLayer.importance}
-          </p>
-          <p className="panel-line">
-            <strong>If this layer is weak:</strong> {activeLayer.risk}
-          </p>
-          <p className="panel-line">
-            <strong>Includes:</strong> {activeLayer.subs.join(', ')}
-          </p>
+          <p className="lead-line">{activeLayer.description}</p>
+
+          <div className="insight-grid">
+            <article className="insight-card analogy">
+              <h4>Business analogy</h4>
+              <p>{activeLayer.businessAnalogy}</p>
+            </article>
+            <article className="insight-card importance">
+              <h4>Why this layer matters</h4>
+              <p>{activeLayer.importance}</p>
+            </article>
+            <article className="insight-card risk">
+              <h4>If this layer is weak</h4>
+              <p>{activeLayer.risk}</p>
+            </article>
+          </div>
+
+          <article className="insight-card full includes">
+            <h4>Includes</h4>
+            <p>{activeLayer.subs.join(', ')}</p>
+            <p className="panel-line compact"><strong>Component example:</strong> {activeExamples.component}</p>
+          </article>
+
+          <article className="insight-card full subexamples">
+            <h4>Subcomponent examples</h4>
+            <ul className="subexample-list">
+              {activeLayer.subs.map((sub) => (
+                <li key={`sub-${sub}`}>{activeExamples.subs[sub] ?? `${sub}: context-specific input for this layer.`}</li>
+              ))}
+            </ul>
+          </article>
+
+          <p className="panel-line compact"><strong>Business example:</strong> {SCENARIOS[scenarioKey].stage2Line}</p>
           <p className="causal">Earlier layers shape how later instructions are interpreted.</p>
-          <p className="next-line">Now try assembling the brain yourself.</p>
         </aside>
+      </div>
+      <div className="stage-footer-nav">
+        <button type="button" className="action-btn primary" onClick={onContinue}>
+          Continue to Stage 3
+        </button>
       </div>
     </section>
   );
 }
 
-function StageOneIntro({ onContinue }) {
+function StageOneIntro({ onContinue, scenarioKey }) {
   return (
     <section className="stage-card" aria-label="Stage 1 mental model">
       <h2>This is the environment the AI operates inside.</h2>
@@ -339,7 +693,11 @@ function StageOneIntro({ onContinue }) {
       <p className="stage-subtitle">
         The AI does not see only your question. It sees the full operating environment first.
       </p>
+      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage1Line}</p>
       <p className="anchor-line">AI output depends on everything that comes before the question.</p>
+      <p className="stage-subtitle">
+        Reference model: OpenClaw System Prompt Architecture overview by Paolo Perazzo.
+      </p>
 
       <div className="diagram-shell">
         <svg viewBox="0 0 970 390" className="diagram stage1-diagram" role="img" aria-label="Stage 1 environment overview">
@@ -398,7 +756,7 @@ function StageOneIntro({ onContinue }) {
   );
 }
 
-function StageThreePipeline() {
+function StageThreePipeline({ scenarioKey, onContinue }) {
   const pipeline = [
     { id: 'base', label: 'Base System' },
     { id: 'tools', label: 'Tool Definitions' },
@@ -413,6 +771,7 @@ function StageThreePipeline() {
       <p className="stage-subtitle">
         This is a simplified execution view. Top layers shape how lower layers are interpreted.
       </p>
+      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage3Line}</p>
 
       <div className="stage3-shell">
         {pipeline.map((item, index) => (
@@ -433,42 +792,148 @@ function StageThreePipeline() {
         All of these layers combine before the task is executed. If the order changes,
         interpretation changes.
       </p>
+      <div className="stage-footer-nav">
+        <button type="button" className="action-btn primary" onClick={onContinue}>
+          Continue to Stage 4
+        </button>
+      </div>
     </section>
   );
 }
 
-function StageFourAssemble() {
-  const [slots, setSlots] = useState([null, null, null, null, null]);
+function StageZeroIntro({ onStart, onPreview, preConfidence, onPreAnswer, scenarioKey }) {
+  const whyPoints = [
+    'Composable architecture: teams can update behavior without rebuilding the full system.',
+    'Controllable behavior: clear layers create predictable responses under pressure.',
+    'Enterprise relevance: architecture decisions map directly to policy, risk, and execution.'
+  ];
+
+  const timeline = [
+    { stage: 'Stage 1', purpose: 'Understand the environment the AI operates inside.' },
+    { stage: 'Stage 2', purpose: 'Learn what each architecture layer is responsible for.' },
+    { stage: 'Stage 3', purpose: 'See the top-to-bottom flow before execution.' },
+    { stage: 'Stage 4', purpose: 'Assemble the brain and validate your understanding.' }
+  ];
+
+  const outcomes = [
+    'Identify all five architecture layers and explain each role.',
+    'Diagnose how misplacement or missing layers degrade output quality.',
+    'Explain why architecture drives behavior in business language.'
+  ];
+
+  return (
+    <section className="stage-card stage0" aria-label="Stage 0 orientation">
+      <div className="stage0-hero">
+        <p className="stage0-kicker">Stage 0: Orientation</p>
+        <h2>Build the Brain. Run the Company.</h2>
+        <p className="stage0-subtitle">A business simulation of OpenClaw System Prompt Architecture.</p>
+        <p className="stage0-anchor">Architecture drives behavior.</p>
+      </div>
+
+      <div className="stage0-grid">
+        <article className="stage0-panel">
+          <h3>Why OpenClaw Matters</h3>
+          <ul>
+            {whyPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="stage0-panel">
+          <h3>What You’ll Do</h3>
+          <div className="stage0-timeline">
+            {timeline.map((item) => (
+              <div key={item.stage} className="stage0-step">
+                <strong>{item.stage}</strong>
+                <span>{item.purpose}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      <div className="stage0-strip">
+        <strong>Who This Is For:</strong> MBA students, product leaders, and strategy teams.
+      </div>
+
+      <article className="stage0-panel">
+        <h3>What You’ll Leave With</h3>
+        <ul>
+          {outcomes.map((outcome) => (
+            <li key={outcome}>{outcome}</li>
+          ))}
+        </ul>
+      </article>
+
+      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage0Line}</p>
+
+      <ConfidenceCheck title="Pre-Check (Before Stage 1)" answers={preConfidence} onAnswer={onPreAnswer} />
+
+      <div className="stage0-actions">
+        <button type="button" className="action-btn primary" onClick={onStart}>
+          Start Stage 1
+        </button>
+        <button type="button" className="action-btn" onClick={onPreview}>
+          Preview Stages
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenarioKey }) {
+  const [placement, setPlacement] = useState({
+    base: [],
+    tools: [],
+    workspace: [],
+    context: [],
+    final: []
+  });
   const [draggedId, setDraggedId] = useState(null);
   const [result, setResult] = useState(null);
+  const [selectedComponent, setSelectedComponent] = useState(STAGE4_COMPONENTS[0].id);
+  const [selectedSection, setSelectedSection] = useState(STAGE4_SECTIONS[0].id);
+  const [showKeyboard, setShowKeyboard] = useState(false);
 
-  const inventory = STAGE4_BLOCKS.filter((block) => !slots.includes(block.id));
+  const inventory = STAGE4_COMPONENTS.filter((item) => !flattenPlacement(placement).includes(item.id));
 
-  function removeFromSlots(nextSlots, id) {
-    return nextSlots.map((slot) => (slot === id ? null : slot));
+  function removeFromSections(nextPlacement, id) {
+    const cleaned = {};
+    for (const section of STAGE4_SECTIONS) {
+      cleaned[section.id] = nextPlacement[section.id].filter((itemId) => itemId !== id);
+    }
+    return cleaned;
   }
 
-  function handleDropToSlot(slotIndex) {
+  function handleDropToSection(sectionId) {
     if (!draggedId) return;
-    setSlots((current) => {
-      const cleaned = removeFromSlots([...current], draggedId);
-      const replaced = cleaned[slotIndex];
-      cleaned[slotIndex] = draggedId;
-      if (replaced && replaced !== draggedId) {
-        const empty = cleaned.findIndex((slot) => slot === null && slot !== draggedId);
-        if (empty >= 0) cleaned[empty] = replaced;
-      }
-      return cleaned;
+    setPlacement((current) => {
+      const cleaned = removeFromSections({ ...current }, draggedId);
+      return { ...cleaned, [sectionId]: [...cleaned[sectionId], draggedId] };
     });
   }
 
   function handleDropToInventory() {
     if (!draggedId) return;
-    setSlots((current) => removeFromSlots([...current], draggedId));
+    setPlacement((current) => removeFromSections({ ...current }, draggedId));
+  }
+
+  function moveComponentKeyboard() {
+    if (!selectedComponent) return;
+    setPlacement((current) => {
+      const cleaned = removeFromSections({ ...current }, selectedComponent);
+      return { ...cleaned, [selectedSection]: [...cleaned[selectedSection], selectedComponent] };
+    });
+  }
+
+  function returnToInventoryKeyboard() {
+    if (!selectedComponent) return;
+    setPlacement((current) => removeFromSections({ ...current }, selectedComponent));
   }
 
   function runAI() {
-    setResult(evaluateAssembly(slots));
+    setResult(evaluateAssembly(placement));
   }
 
   function reassemble() {
@@ -476,7 +941,13 @@ function StageFourAssemble() {
   }
 
   function resetAll() {
-    setSlots([null, null, null, null, null]);
+    setPlacement({
+      base: [],
+      tools: [],
+      workspace: [],
+      context: [],
+      final: []
+    });
     setResult(null);
   }
 
@@ -484,8 +955,12 @@ function StageFourAssemble() {
     <section className="stage-card" aria-label="Stage 4 assemble the brain">
       <h2>Stage 4 tests whether you can assemble the brain correctly.</h2>
       <p className="stage-subtitle">
-        Drag blocks from inventory into Slot 1-5, then click Run AI to see deterministic behavior.
+        Drag components into the right sections, then click Run AI to see deterministic behavior.
       </p>
+      <p className="stage-subtitle">
+        Support: Hover components to see business analogies while assembling.
+      </p>
+      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage4Line}</p>
 
       <div className="stage4-layout">
         <div
@@ -497,53 +972,125 @@ function StageFourAssemble() {
           }}
         >
           <h3>Inventory</h3>
-          <p>Drag from here into the stack.</p>
+          <p>Drag specific components into the correct architecture section.</p>
           <div className="inv-list">
-            {inventory.map((block) => (
+            {inventory.map((item) => (
               <article
-                key={block.id}
-                className={`inv-item inv-${block.id}`}
+                key={item.id}
+                className={`inv-item inv-${item.color}`}
                 draggable
-                onDragStart={() => setDraggedId(block.id)}
+                onDragStart={() => setDraggedId(item.id)}
                 onDragEnd={() => setDraggedId(null)}
+                title={item.tip}
               >
-                {block.label}
+                <strong>{item.label}</strong>
+                <span>{SCENARIOS[scenarioKey].itemExamples[item.id] ?? item.example}</span>
               </article>
             ))}
           </div>
+          <div className="keyboard-toggle-row">
+            <button
+              type="button"
+              className="action-btn"
+              onClick={() => setShowKeyboard((value) => !value)}
+              aria-expanded={showKeyboard}
+            >
+              {showKeyboard ? 'Hide Keyboard Placement' : 'Show Keyboard Placement (Accessibility)'}
+            </button>
+          </div>
+          {showKeyboard ? (
+            <div className="keyboard-controls">
+              <p className="keyboard-note">
+                Drag and drop is the default interaction. This keyboard placement panel is provided as
+                an accessibility option.
+              </p>
+              <h4>Keyboard Placement</h4>
+              <label>
+                Component
+                <select value={selectedComponent} onChange={(event) => setSelectedComponent(event.target.value)}>
+                  {STAGE4_COMPONENTS.map((item) => (
+                    <option key={`pick-${item.id}`} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Section
+                <select value={selectedSection} onChange={(event) => setSelectedSection(event.target.value)}>
+                  {STAGE4_SECTIONS.map((section) => (
+                    <option key={`drop-${section.id}`} value={section.id}>
+                      {section.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="keyboard-actions">
+                <button type="button" className="action-btn" onClick={moveComponentKeyboard}>
+                  Place
+                </button>
+                <button type="button" className="action-btn" onClick={returnToInventoryKeyboard}>
+                  Return
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="stage4-stack">
-          <h3>Assembly Stack</h3>
-          <p>Place one layer per slot.</p>
-          <div className="slot-list">
-            {slots.map((slot, index) => (
+          <h3>Architecture Sections</h3>
+          <p>Group correctly, then run the system.</p>
+          <div className="section-list">
+            {STAGE4_SECTIONS.map((section) => (
               <div
-                key={`slot-${index + 1}`}
-                className={`slot ${slot ? 'filled' : 'empty'}`}
+                key={section.id}
+                className={`section-slot ${placement[section.id].length > 0 ? 'filled' : 'empty'}`}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => {
                   event.preventDefault();
-                  handleDropToSlot(index);
+                  handleDropToSection(section.id);
                 }}
+                title={section.business}
               >
-                <span className="slot-label">Slot {index + 1}</span>
-                {slot ? (
-                  <article
-                    className={`inv-item inv-${slot}`}
-                    draggable
-                    onDragStart={() => setDraggedId(slot)}
-                    onDragEnd={() => setDraggedId(null)}
-                  >
-                    {LAYER_LABELS[slot]}
-                  </article>
-                ) : (
-                  <span className="slot-empty-text">Drop layer here</span>
-                )}
+                <span className="section-label">{section.title}</span>
+                <span className="section-hint">{section.hint}</span>
+                <div className="section-items">
+                  {placement[section.id].length > 0 ? (
+                    placement[section.id].map((itemId) => {
+                      const item = COMPONENT_MAP[itemId];
+                      return (
+                        <article
+                          key={itemId}
+                          className={`inv-item inv-${item.color}`}
+                          draggable
+                          onDragStart={() => setDraggedId(itemId)}
+                          onDragEnd={() => setDraggedId(null)}
+                          title={item.tip}
+                        >
+                          <strong>{item.label}</strong>
+                          <span>{SCENARIOS[scenarioKey].itemExamples[item.id] ?? item.example}</span>
+                        </article>
+                      );
+                    })
+                  ) : (
+                    <span className="slot-empty-text">Drop components here</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="quick-guide">
+        <h4>Quick Business Guide</h4>
+        <ul>
+          {STAGE4_SECTIONS.map((section) => (
+            <li key={`guide-${section.id}`}>
+              <strong>{section.title}:</strong> {section.business}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="stage4-actions">
@@ -570,12 +1117,67 @@ function StageFourAssemble() {
           ) : null}
         </div>
       ) : null}
+
+      <ConfidenceCheck
+        title="Post-Check (After Stage 4)"
+        answers={postConfidence}
+        onAnswer={onPostAnswer}
+        gain={
+          preConfidence.order && preConfidence.roles && postConfidence.order && postConfidence.roles
+            ? {
+                order: postConfidence.order - preConfidence.order,
+                roles: postConfidence.roles - preConfidence.roles
+              }
+            : null
+        }
+      />
+      {result?.state === 'correct' ? (
+        <div className="completion-summary">
+          <h4>You can now explain:</h4>
+          <ul>
+            <li>Which components belong to each architecture layer.</li>
+            <li>Why static and dynamic inputs must be sequenced correctly.</li>
+            <li>How architecture quality changes output quality in business terms.</li>
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }
 
 export default function App() {
-  const [stage, setStage] = useState(1);
+  const [stage, setStage] = useState(0);
+  const [scenarioKey, setScenarioKey] = useState('finance');
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [preConfidence, setPreConfidence] = useState({ order: null, roles: null });
+  const [postConfidence, setPostConfidence] = useState({ order: null, roles: null });
+
+  useEffect(() => {
+    const savedStage = Number.parseInt(localStorage.getItem('openclaw_stage') ?? '0', 10);
+    if (!Number.isNaN(savedStage) && savedStage >= 0 && savedStage <= 4) {
+      setStage(savedStage);
+    }
+    const savedScenario = localStorage.getItem('openclaw_scenario');
+    if (savedScenario && SCENARIOS[savedScenario]) {
+      setScenarioKey(savedScenario);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('openclaw_stage', String(stage));
+  }, [stage]);
+
+  useEffect(() => {
+    localStorage.setItem('openclaw_scenario', scenarioKey);
+  }, [scenarioKey]);
+
+  function updatePreConfidence(id, value) {
+    setPreConfidence((prev) => ({ ...prev, [id]: value }));
+  }
+
+  function updatePostConfidence(id, value) {
+    setPostConfidence((prev) => ({ ...prev, [id]: value }));
+  }
 
   return (
     <div className="app-shell">
@@ -587,7 +1189,9 @@ export default function App() {
               ? 'Stage 2: The Architecture Story'
               : stage === 3
                 ? 'Stage 3: Visual Pipeline'
-                : 'Stage 4: Assemble the Brain'}
+                : stage === 4
+                  ? 'Stage 4: Assemble the Brain'
+                  : 'Stage 0: Orientation'}
         </p>
         <h1>Build the Brain. Run the Company.</h1>
         <p>
@@ -597,9 +1201,33 @@ export default function App() {
               ? 'Explore each layer to understand business meaning before testing.'
               : stage === 3
                 ? 'Read the stack as top-to-bottom causality before interactive exercises.'
-                : 'Assemble the layers yourself to validate whether order changes behavior.'}
+                : stage === 4
+                  ? 'Assemble the layers yourself to validate whether order changes behavior.'
+                  : 'Understand the purpose, motive, and outcomes before entering the learning path.'}
         </p>
+        <p className="source-line">
+          Grounded in: <a href="https://ppaolo.substack.com/p/openclaw-system-architecture-overview" target="_blank" rel="noreferrer">OpenClaw System Architecture Overview</a>
+        </p>
+        <div className="scenario-row">
+          <label>
+            Scenario
+            <select value={scenarioKey} onChange={(event) => setScenarioKey(event.target.value)}>
+              {Object.entries(SCENARIOS).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <div className="stage-nav">
+          <button
+            type="button"
+            className={stage === 0 ? 'stage-btn active' : 'stage-btn'}
+            onClick={() => setStage(0)}
+          >
+            Stage 0
+          </button>
           <button
             type="button"
             className={stage === 1 ? 'stage-btn active' : 'stage-btn'}
@@ -630,10 +1258,27 @@ export default function App() {
           </button>
         </div>
       </header>
-      {stage === 1 ? <StageOneIntro onContinue={() => setStage(2)} /> : null}
-      {stage === 2 ? <StageTwoStory key="stage-two" /> : null}
-      {stage === 3 ? <StageThreePipeline /> : null}
-      {stage === 4 ? <StageFourAssemble /> : null}
+      {stage === 0 ? (
+        <StageZeroIntro
+          onStart={() => setStage(1)}
+          onPreview={() => setStage(3)}
+          preConfidence={preConfidence}
+          onPreAnswer={updatePreConfidence}
+          scenarioKey={scenarioKey}
+        />
+      ) : null}
+      {stage === 1 ? <StageOneIntro onContinue={() => setStage(2)} scenarioKey={scenarioKey} /> : null}
+      {stage === 2 ? <StageTwoStory key="stage-two" scenarioKey={scenarioKey} onContinue={() => setStage(3)} /> : null}
+      {stage === 3 ? <StageThreePipeline scenarioKey={scenarioKey} onContinue={() => setStage(4)} /> : null}
+      {stage === 4 ? (
+        <StageFourAssemble
+          postConfidence={postConfidence}
+          onPostAnswer={updatePostConfidence}
+          preConfidence={preConfidence}
+          scenarioKey={scenarioKey}
+        />
+      ) : null}
+      <GlossaryDrawer open={glossaryOpen} onToggle={() => setGlossaryOpen((value) => !value)} />
     </div>
   );
 }
