@@ -882,7 +882,7 @@ function StageZeroIntro({ onStart, onPreview, preConfidence, onPreAnswer, scenar
   );
 }
 
-function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenarioKey }) {
+function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenarioKey, onOpenShare }) {
   const [placement, setPlacement] = useState({
     base: [],
     tools: [],
@@ -1131,6 +1131,13 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
             : null
         }
       />
+      <div className="share-prompt-card">
+        <h4>Was this helpful?</h4>
+        <p>If this helped you, consider sharing it with a friend or one person in your network.</p>
+        <button type="button" className="action-btn primary" onClick={onOpenShare}>
+          Open Share & About
+        </button>
+      </div>
       {result?.state === 'correct' ? (
         <div className="completion-summary">
           <h4>You can now explain:</h4>
@@ -1149,8 +1156,16 @@ export default function App() {
   const [stage, setStage] = useState(0);
   const [scenarioKey, setScenarioKey] = useState('finance');
   const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [presenterOpen, setPresenterOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [preConfidence, setPreConfidence] = useState({ order: null, roles: null });
   const [postConfidence, setPostConfidence] = useState({ order: null, roles: null });
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareText = 'Explore this business simulation of OpenClaw System Prompt Architecture.';
+  const linkedinShare = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+  const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+  const whatsappShare = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
+  const emailShare = `mailto:?subject=${encodeURIComponent('Build the Brain. Run the Company.')}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`;
 
   useEffect(() => {
     const savedStage = Number.parseInt(localStorage.getItem('openclaw_stage') ?? '0', 10);
@@ -1171,6 +1186,14 @@ export default function App() {
     localStorage.setItem('openclaw_scenario', scenarioKey);
   }, [scenarioKey]);
 
+  useEffect(() => {
+    function onKeyDown(event) {
+      if (event.key === 'Escape') setPresenterOpen(false);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   function updatePreConfidence(id, value) {
     setPreConfidence((prev) => ({ ...prev, [id]: value }));
   }
@@ -1179,9 +1202,25 @@ export default function App() {
     setPostConfidence((prev) => ({ ...prev, [id]: value }));
   }
 
+  async function handleCopyShare() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1800);
+    } catch {
+      setShareCopied(false);
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="hero">
+        <div className="hero-topbar">
+          <button type="button" className="presenter-menu-btn" onClick={() => setPresenterOpen(true)}>
+            Share & About
+          </button>
+        </div>
         <p className="eyebrow">
           {stage === 1
             ? 'Stage 1: Mental Model'
@@ -1276,9 +1315,96 @@ export default function App() {
           onPostAnswer={updatePostConfidence}
           preConfidence={preConfidence}
           scenarioKey={scenarioKey}
+          onOpenShare={() => setPresenterOpen(true)}
         />
       ) : null}
       <GlossaryDrawer open={glossaryOpen} onToggle={() => setGlossaryOpen((value) => !value)} />
+
+      {presenterOpen ? (
+        <div className="presenter-modal" onClick={() => setPresenterOpen(false)}>
+          <aside
+            className="presenter-panel open"
+            aria-label="Share and about"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button type="button" className="presenter-close" onClick={() => setPresenterOpen(false)}>
+              X
+            </button>
+            <h3>Share & About</h3>
+
+            <section className="presenter-section">
+              <h4>Share This App</h4>
+              <p>If this helped you, share it with one person in your network.</p>
+              <div className="share-row">
+                <input type="text" readOnly value={shareUrl} aria-label="Share link" />
+                <button type="button" className="action-btn" onClick={handleCopyShare}>
+                  {shareCopied ? 'Copied' : 'Copy Link'}
+                </button>
+              </div>
+              <div className="share-links">
+                <a href={linkedinShare} target="_blank" rel="noreferrer">LinkedIn</a>
+                <a href={xShare} target="_blank" rel="noreferrer">X</a>
+                <a href={whatsappShare} target="_blank" rel="noreferrer">WhatsApp</a>
+                <a href={emailShare}>Email</a>
+              </div>
+            </section>
+
+            <div className="presenter-avatar">N</div>
+            <h3>Nishchay Vishwanath</h3>
+            <p className="presenter-role">Prefers to be called Nish.</p>
+
+            <section className="presenter-section">
+              <h4>Who I Am</h4>
+              <p>
+                I’m exploring how AI systems are structured under the hood. This project is part of
+                that learning.
+              </p>
+            </section>
+
+            <section className="presenter-section">
+              <h4>What This Is</h4>
+              <ul>
+                <li>A walkthrough of how system layers shape AI behavior.</li>
+                <li>A small drag-and-drop experiment to test if order matters.</li>
+                <li>An attempt to make something technical easier to reason about.</li>
+              </ul>
+            </section>
+
+            <section className="presenter-section">
+              <h4>What I’m Curious About</h4>
+              <ul>
+                <li>Why reliable systems behave differently from chaotic ones.</li>
+                <li>How structure shapes decisions.</li>
+                <li>How businesses can be educated on AI systems.</li>
+              </ul>
+            </section>
+
+            <section className="presenter-section">
+              <h4>Now</h4>
+              <p>Learning in public.</p>
+            </section>
+
+            <section className="presenter-section">
+              <h4>Next</h4>
+              <p>Improving this once I understand it better.</p>
+            </section>
+
+            <section className="presenter-section">
+              <h4>Fun Fact</h4>
+              <p>I keep a list of failed ideas. Most of them come back stronger.</p>
+              <p>Then I go on tilt playing poker.</p>
+            </section>
+
+            <section className="presenter-section presenter-links">
+              <h4>Profile Links</h4>
+              <a href="https://www.linkedin.com/in/nishchay-v/" target="_blank" rel="noreferrer">
+                LinkedIn
+              </a>
+              <a href="mailto:nv268@cornell.edu">Email</a>
+            </section>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }

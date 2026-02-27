@@ -38,6 +38,22 @@ body {
   padding: 1rem;
 }
 
+.hero-topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.25rem;
+}
+
+.presenter-menu-btn {
+  border: 1px solid #4a6f98;
+  background: #16304f;
+  color: #e4effe;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -250,8 +266,8 @@ body {
 
 .continue-btn {
   margin-top: 0.75rem;
-  border: 1px solid #4a6c92;
-  background: #1b3657;
+  border: 1px solid #5fcbe0;
+  background: #1f4963;
   color: #e8f2ff;
   border-radius: 9px;
   padding: 0.45rem 0.8rem;
@@ -615,7 +631,7 @@ body {
 .stage-footer-nav {
   margin-top: 0.75rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .stage4-layout {
@@ -918,6 +934,25 @@ body {
   font-weight: 700;
 }
 
+.share-prompt-card {
+  margin-top: 0.75rem;
+  border: 1px solid #3d5f86;
+  border-radius: 10px;
+  background: #132842;
+  padding: 0.62rem;
+}
+
+.share-prompt-card h4 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.share-prompt-card p {
+  margin: 0.32rem 0 0.55rem;
+  color: #bfd1e6;
+  font-size: 0.84rem;
+}
+
 .completion-summary {
   margin-top: 0.75rem;
   border: 1px solid #3e6c56;
@@ -947,6 +982,173 @@ body {
   right: 14px;
   bottom: 14px;
   z-index: 40;
+}
+
+.presenter-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 8, 14, 0.58);
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.presenter-panel {
+  position: relative;
+  width: min(780px, 96vw);
+  max-height: calc(100vh - 4rem);
+  background: #102036;
+  border: 1px solid #345072;
+  border-radius: 14px;
+  padding: 0.9rem;
+  overflow: auto;
+  transform: translateX(0);
+}
+
+.presenter-panel.open {
+  transform: translateX(0);
+}
+
+.presenter-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #4c6d93;
+  background: #183353;
+  color: #e6f1ff;
+  border-radius: 8px;
+  padding: 0;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.presenter-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  margin-top: 0.7rem;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #e8f4ff;
+  background: #2a5277;
+  border: 1px solid #6ca7d5;
+}
+
+.presenter-panel h3 {
+  margin: 0.55rem 0 0.15rem;
+}
+
+.presenter-panel > h3:first-of-type {
+  margin-top: 0.25rem;
+  margin-right: 2.5rem;
+}
+
+.presenter-role {
+  margin: 0;
+  color: #a9bed7;
+  font-size: 0.85rem;
+}
+
+.presenter-section {
+  margin-top: 0.75rem;
+  border-top: 1px solid #2d4460;
+  padding-top: 0.55rem;
+}
+
+.presenter-section h4 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.presenter-section p {
+  margin: 0.35rem 0 0;
+  color: #bdd0e5;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.presenter-section ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+}
+
+.presenter-section li {
+  margin: 0.2rem 0;
+  color: #bdd0e5;
+  font-size: 0.83rem;
+}
+
+.share-row {
+  margin-top: 0.45rem;
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.share-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #47678f;
+  background: #0f253d;
+  color: #dce9fb;
+  border-radius: 8px;
+  padding: 0.42rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.share-links {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.share-links a {
+  border: 1px solid #47678f;
+  background: #16304d;
+  color: #dce9fb;
+  border-radius: 7px;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.presenter-links a {
+  display: inline-block;
+  margin-right: 0.45rem;
+  margin-top: 0.35rem;
+  border: 1px solid #47678f;
+  background: #16304d;
+  color: #dce9fb;
+  border-radius: 7px;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .presenter-modal {
+    padding: 0.8rem;
+    align-items: stretch;
+  }
+
+  .presenter-panel {
+    width: 100%;
+    max-height: 100%;
+  }
+
+  .share-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .glossary-toggle {
