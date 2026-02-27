@@ -194,6 +194,17 @@ const STAGE4_COMPONENTS = [
 
 const COMPONENT_MAP = Object.fromEntries(STAGE4_COMPONENTS.map((item) => [item.id, item]));
 
+function layerIcon(layerId) {
+  const icons = {
+    base: '🛡️',
+    tools: '🧰',
+    workspace: '📘',
+    context: '📡',
+    final: '🎯'
+  };
+  return icons[layerId] ?? '🔹';
+}
+
 const SCENARIOS = {
   finance: {
     label: 'Finance',
@@ -555,12 +566,12 @@ function StageTwoStory({ scenarioKey, onContinue }) {
 
   return (
     <section className="stage-card" aria-label="Stage 2 architecture story">
-      <h2>Stage 2 explains what each layer does before execution.</h2>
+      <h2>🧩 Stage 2 explains what each layer does before execution.</h2>
       <p className="stage-subtitle">
         Click any layer in the diagram. You will see its role, business analogy, and why placement
         matters.
       </p>
-      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage2Line}</p>
+      <p className="business-line">💼 Why this matters in business: {SCENARIOS[scenarioKey].stage2Line}</p>
       <p className="stage-subtitle">
         Reference: OpenClaw System Prompt Architecture overview by Paolo Perazzo.
       </p>
@@ -637,32 +648,32 @@ function StageTwoStory({ scenarioKey, onContinue }) {
           <p className="explain-step">
             Stage 2 Progress: {visited.size}/{STAGE2_LAYERS.length} layers explored
           </p>
-          <h3>{activeLayer.title}</h3>
+          <h3>{layerIcon(activeLayer.id)} {activeLayer.title}</h3>
           <p className="lead-line">{activeLayer.description}</p>
 
           <div className="insight-grid">
             <article className="insight-card analogy">
-              <h4>Business analogy</h4>
+              <h4>🏢 Business analogy</h4>
               <p>{activeLayer.businessAnalogy}</p>
             </article>
             <article className="insight-card importance">
-              <h4>Why this layer matters</h4>
+              <h4>📈 Why this layer matters</h4>
               <p>{activeLayer.importance}</p>
             </article>
             <article className="insight-card risk">
-              <h4>If this layer is weak</h4>
+              <h4>⚠️ If this layer is weak</h4>
               <p>{activeLayer.risk}</p>
             </article>
           </div>
 
           <article className="insight-card full includes">
-            <h4>Includes</h4>
+            <h4>📦 Includes</h4>
             <p>{activeLayer.subs.join(', ')}</p>
             <p className="panel-line compact"><strong>Component example:</strong> {activeExamples.component}</p>
           </article>
 
           <article className="insight-card full subexamples">
-            <h4>Subcomponent examples</h4>
+            <h4>🧪 Subcomponent examples</h4>
             <ul className="subexample-list">
               {activeLayer.subs.map((sub) => (
                 <li key={`sub-${sub}`}>{activeExamples.subs[sub] ?? `${sub}: context-specific input for this layer.`}</li>
@@ -670,7 +681,7 @@ function StageTwoStory({ scenarioKey, onContinue }) {
             </ul>
           </article>
 
-          <p className="panel-line compact"><strong>Business example:</strong> {SCENARIOS[scenarioKey].stage2Line}</p>
+          <p className="panel-line compact"><strong>💼 Business example:</strong> {SCENARIOS[scenarioKey].stage2Line}</p>
           <p className="causal">Earlier layers shape how later instructions are interpreted.</p>
         </aside>
       </div>
@@ -686,14 +697,14 @@ function StageTwoStory({ scenarioKey, onContinue }) {
 function StageOneIntro({ onContinue, scenarioKey }) {
   return (
     <section className="stage-card" aria-label="Stage 1 mental model">
-      <h2>This is the environment the AI operates inside.</h2>
+      <h2>🌐 This is the environment the AI operates inside.</h2>
       <p className="stage-subtitle">
         Think of this like running a company: outcomes depend on systems, not just one request.
       </p>
       <p className="stage-subtitle">
         The AI does not see only your question. It sees the full operating environment first.
       </p>
-      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage1Line}</p>
+      <p className="business-line">💼 Why this matters in business: {SCENARIOS[scenarioKey].stage1Line}</p>
       <p className="anchor-line">AI output depends on everything that comes before the question.</p>
       <p className="stage-subtitle">
         Reference model: OpenClaw System Prompt Architecture overview by Paolo Perazzo.
@@ -735,7 +746,7 @@ function StageOneIntro({ onContinue, scenarioKey }) {
       <div className="stage1-grid">
         {LAYERS.map((layer) => (
           <article key={`s1-card-${layer.id}`} className="stage1-card">
-            <h3>{layer.title}</h3>
+            <h3>{layerIcon(layer.id)} {layer.title}</h3>
             <p>
               <strong>What it is:</strong> {layer.what}
             </p>
@@ -767,11 +778,11 @@ function StageThreePipeline({ scenarioKey, onContinue }) {
 
   return (
     <section className="stage-card" aria-label="Stage 3 vertical pipeline">
-      <h2>Stage 3 shows the full stack in one clear flow.</h2>
+      <h2>🧱 Stage 3 shows the full stack in one clear flow.</h2>
       <p className="stage-subtitle">
         This is a simplified execution view. Top layers shape how lower layers are interpreted.
       </p>
-      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage3Line}</p>
+      <p className="business-line">💼 Why this matters in business: {SCENARIOS[scenarioKey].stage3Line}</p>
 
       <div className="stage3-shell">
         {pipeline.map((item, index) => (
@@ -825,14 +836,14 @@ function StageZeroIntro({ onStart, onPreview, preConfidence, onPreAnswer, scenar
     <section className="stage-card stage0" aria-label="Stage 0 orientation">
       <div className="stage0-hero">
         <p className="stage0-kicker">Stage 0: Orientation</p>
-        <h2>Build the Brain. Run the Company.</h2>
+        <h2>🚀 Build the Brain. Run the Company.</h2>
         <p className="stage0-subtitle">A business simulation of OpenClaw System Prompt Architecture.</p>
         <p className="stage0-anchor">Architecture drives behavior.</p>
       </div>
 
       <div className="stage0-grid">
         <article className="stage0-panel">
-          <h3>Why OpenClaw Matters</h3>
+          <h3>🧠 Why OpenClaw Matters</h3>
           <ul>
             {whyPoints.map((point) => (
               <li key={point}>{point}</li>
@@ -841,7 +852,7 @@ function StageZeroIntro({ onStart, onPreview, preConfidence, onPreAnswer, scenar
         </article>
 
         <article className="stage0-panel">
-          <h3>What You’ll Do</h3>
+          <h3>🗺️ What You’ll Do</h3>
           <div className="stage0-timeline">
             {timeline.map((item) => (
               <div key={item.stage} className="stage0-step">
@@ -858,7 +869,7 @@ function StageZeroIntro({ onStart, onPreview, preConfidence, onPreAnswer, scenar
       </div>
 
       <article className="stage0-panel">
-        <h3>What You’ll Leave With</h3>
+        <h3>✅ What You’ll Leave With</h3>
         <ul>
           {outcomes.map((outcome) => (
             <li key={outcome}>{outcome}</li>
@@ -866,7 +877,7 @@ function StageZeroIntro({ onStart, onPreview, preConfidence, onPreAnswer, scenar
         </ul>
       </article>
 
-      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage0Line}</p>
+      <p className="business-line">💼 Why this matters in business: {SCENARIOS[scenarioKey].stage0Line}</p>
 
       <ConfidenceCheck title="Pre-Check (Before Stage 1)" answers={preConfidence} onAnswer={onPreAnswer} />
 
@@ -953,14 +964,14 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
 
   return (
     <section className="stage-card" aria-label="Stage 4 assemble the brain">
-      <h2>Stage 4 tests whether you can assemble the brain correctly.</h2>
+      <h2>🛠️ Stage 4 tests whether you can assemble the brain correctly.</h2>
       <p className="stage-subtitle">
         Drag components into the right sections, then click Run AI to see deterministic behavior.
       </p>
       <p className="stage-subtitle">
         Support: Hover components to see business analogies while assembling.
       </p>
-      <p className="business-line">Why this matters in business: {SCENARIOS[scenarioKey].stage4Line}</p>
+      <p className="business-line">💼 Why this matters in business: {SCENARIOS[scenarioKey].stage4Line}</p>
 
       <div className="stage4-layout">
         <div
@@ -971,7 +982,7 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
             handleDropToInventory();
           }}
         >
-          <h3>Inventory</h3>
+          <h3>🧩 Inventory</h3>
           <p>Drag specific components into the correct architecture section.</p>
           <div className="inv-list">
             {inventory.map((item) => (
@@ -1004,7 +1015,7 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
                 Drag and drop is the default interaction. This keyboard placement panel is provided as
                 an accessibility option.
               </p>
-              <h4>Keyboard Placement</h4>
+              <h4>⌨️ Keyboard Placement</h4>
               <label>
                 Component
                 <select value={selectedComponent} onChange={(event) => setSelectedComponent(event.target.value)}>
@@ -1038,7 +1049,7 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
         </div>
 
         <div className="stage4-stack">
-          <h3>Architecture Sections</h3>
+          <h3>🏗️ Architecture Sections</h3>
           <p>Group correctly, then run the system.</p>
           <div className="section-list">
             {STAGE4_SECTIONS.map((section) => (
@@ -1083,7 +1094,7 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
       </div>
 
       <div className="quick-guide">
-        <h4>Quick Business Guide</h4>
+        <h4>📌 Quick Business Guide</h4>
         <ul>
           {STAGE4_SECTIONS.map((section) => (
             <li key={`guide-${section.id}`}>
@@ -1108,9 +1119,9 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
       {result ? (
         <div className={`stage4-result ${result.state}`}>
           {result.state === 'correct' ? <p className="confirm-line">Brain assembled correctly.</p> : null}
-          <h4>Output</h4>
+          <h4>📄 Output</h4>
           <p>{result.output}</p>
-          <h4>What happened?</h4>
+          <h4>🧠 What happened?</h4>
           <p>{result.explanation}</p>
           {result.state === 'correct' ? (
             <p className="causal">Earlier layers shaped how the task was interpreted.</p>
@@ -1132,7 +1143,7 @@ function StageFourAssemble({ postConfidence, onPostAnswer, preConfidence, scenar
         }
       />
       <div className="share-prompt-card">
-        <h4>Was this helpful?</h4>
+        <h4>🤝 Was this helpful?</h4>
         <p>If this helped you, consider sharing it with a friend or one person in your network.</p>
         <button type="button" className="action-btn primary" onClick={onOpenShare}>
           Open Share & About
