@@ -84,6 +84,13 @@ body {
   color: #8cd6e8;
 }
 
+.session-count-line {
+  margin: 0.5rem 0 0 !important;
+  color: #9fd3e5 !important;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .scenario-row {
   margin-top: 0.55rem;
 }

@@ -9,6 +9,10 @@ Interactive single-page React app for MBA students to learn openClaw System Prom
 ├── index.html
 ├── package.json
 ├── vite.config.js
+├── api
+│   ├── _upstash.js
+│   ├── session-count.js
+│   └── session-start.js
 └── src
     ├── App.jsx
     ├── main.jsx
@@ -40,6 +44,22 @@ npm run preview
 
 ## Notes
 
-- No backend is used.
-- No external API calls are made.
 - Outcomes are simulated with deterministic mock scoring logic based on user configuration choices.
+
+## Optional: Global Session Counter (Vercel + Upstash)
+
+This app includes optional serverless endpoints to track a global `Sessions started` counter:
+
+- `POST /api/session-start`
+- `GET /api/session-count`
+
+Configure these environment variables in Vercel:
+
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
+
+Behavior:
+
+- The app creates a tab-scoped session id in `sessionStorage`.
+- It calls `POST /api/session-start` once per tab session.
+- It then fetches `GET /api/session-count` and displays the count in Stage 0 and Share & About.
