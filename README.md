@@ -2,6 +2,12 @@
 
 Interactive single-page React app for MBA students to learn openClaw System Prompt Architecture through a business strategy simulation.
 
+## Tech Stack
+
+- React + Vite
+- Node.js + npm
+- Optional Vercel serverless APIs with Upstash Redis
+
 ## Folder Structure
 
 ```
@@ -34,6 +40,13 @@ npm run dev
 ```
 
 3. Open the local URL shown in terminal (usually `http://localhost:5173`).
+
+## Environment Variables (Optional)
+
+Only needed for the global session counter APIs:
+
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
 
 ## Build for Production
 
